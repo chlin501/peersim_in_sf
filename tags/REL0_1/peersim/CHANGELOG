@@ -1,0 +1,105 @@
+AM 15/10/2004
+- added the peersim.config.ClassFinder class, whose task is to
+  associate non-qualified names to qualified names. 
+- changed peersim.config.Configuration to use ClassFinder.
+  Now it is possible to specify a non-qualified class name in
+  configuration files. If a unique package-qualified class is
+  found, it is used to create new instances. Otherwise,
+  smart error messages are printed, when possible.
+
+AM 14/10/2004
+- added maxcount and mincount to the toString method of 
+  peersim.util.IncrementalStats
+- added a print(String prefix) method to peersim.util.IncrementalFreq 
+  that uses the Log facility to print
+- protocols are not nullified in GeneralNode when the node is declared DEAD
+- observers, initializers and dynamics are not required to be tagged by
+  consecutive numbers any more; this is not the final version of what
+  we have discussed, it is just a small hack, compatible with the past,
+  that I've implemented in Configuration.java
+- small changes to RangeSimulator; in any case, it will updated in order
+  to be based on the Simulator code.
+
+AM 22/6/2004:
+In GeneralNode, when creating/cloning a node, the CommonState.setNode()
+method is invoked to set the current node being created.
+
+AM 22/6/2004:
+peersim.cdsim.RangeSimulator, added support for idle protocols. When
+a protocol has the idle flag in its specification (like protocol.0.idle),
+the nextCycle method is not called. This can be useful for protocols
+reuse.
+
+AM 22/6/2004:
+peersim.core.Shuffle, example.hot.InetInitializer, example.hot.RobustnessEvaluator,
+example.loadbalance.AvgBalance, example.loadbalance.BasicBalance
+removed unused import(s)
+
+AM 22/6/2004:
+Moved LinearDistribution, UniformDistribution and PeakDistribution to
+a new package called distributions (outside peersim, but to be included
+in the peersim software distribution).
+
+Implemented NodeInitializer in LinearDistribution and UniformDistribution,
+to provide values also when new nodes are added dynamically.
+
+Added classes SingleValueHolder and SingleValueComparator
+
+Name change: peersim.util.ExtendedStats => peersim.util.MomentStats 
+
+Added peersim.cdsim.DaemonProtocol as a generic entry point for all
+kinds of hacks, to avoid complicating the simulator. It can be used
+to run observers and modifiers several times within one cycle.
+
+Added cycle time to peersim.core.CommonState and modified
+peersim.cdsim.Simulator to handle this feature. It records the number
+of nodes already visited in a given cycle (makes sense only for cycle based
+simulation).
+
+Added peersim.example.hot package : classes to model a preferential
+attachment internet like topology
+
+Added peersim.util.ExtendedStats class 
+
+peersim.util.IncrementalFreq now accepts an upper bound on the
+processed values
+
+peersim.cdsim.Simulator now outputs two blank lines between
+experiments
+
+Upgraded GraphPrinter so that it can print to files that can be
+read by WireFromFile. Added method writeNeighborList to GraphIO.
+
+Added new class peersim.dynamics.WireFromFile
+
+Fixed bug in peersim.util.WeightedRandPerm which accepted
+non-positive weights
+
+Added peersim.reports.SingleValueObserver
+
+Added new modifier classes, which can set numeric parameters of
+network nodes according the some specified pattern. Originally this
+was in aggregation but refactored to be more general.
+
+Refactoring: added classes from peersim.init into peersim.dynamics
+and now Dynamics is used also instead of the old Initializer. This
+involved quite a number of files. Note that config files don't break
+because the init entries are now simply loaded as dynamics that are
+scheduled to execute only before the simulation, once. The change
+was trivial in all files, just renaming.
+
+Added class peersim.dynamics.Shuffle
+
+Made class peersim.graph.NeighborListGraph public
+
+fixed bug in GeneralNode with failstate handling
+
+added curent node to CommonState. When a protocol is executing,
+it is the node hosting the protocol. Modified simulators too to
+record this info.
+
+fixed some config files in lpbcast and scamp packages
+
+VERSION 0.0 RELEASED
+
+
