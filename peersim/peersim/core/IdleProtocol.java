@@ -116,11 +116,7 @@ public void pack()
 public String toString() {
 	
 	StringBuffer buffer = new StringBuffer();
-	buffer.append("len="+len+" maxlen="+neighbors.length+" [");
-	for(int i=0; i<len; ++i)
-	{
-		buffer.append(neighbors[i].getIndex()+" ");
-	}
-	return buffer.append("]").toString();
+	buffer.append(len+" "+neighbors.length);
+	return buffer.toString();
 }
 }

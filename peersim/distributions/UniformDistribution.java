@@ -53,7 +53,7 @@ public static final String PAR_MIN = "min";
  * Parameter read will has the full name
  * <tt>prefix+"."+PAR_PROT</tt>
  */
-public static final String PAR_PROT = "protocol";
+public static final String PAR_PROTID = "protocolID";
 
 //--------------------------------------------------------------------------
 // Fields
@@ -79,7 +79,7 @@ public UniformDistribution(String prefix)
 {
 	max = Configuration.getDouble(prefix+"."+PAR_MAX);
 	min = Configuration.getDouble(prefix+"."+PAR_MIN,-max);
-	pid = Configuration.getPid(prefix+"."+PAR_PROT);
+	pid = Configuration.getInt(prefix+"."+PAR_PROTID);
 }
 
 //--------------------------------------------------------------------------

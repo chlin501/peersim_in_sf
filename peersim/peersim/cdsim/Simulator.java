@@ -18,12 +18,12 @@
 		
 package peersim.cdsim;
 
-import java.util.*;
 import peersim.config.*;
 import peersim.core.*;
-import peersim.dynamics.*;
 import peersim.reports.Observer;
-import peersim.util.*;
+import peersim.dynamics.Dynamics;
+import peersim.util.CommonRandom;
+import java.util.Arrays;
 
 /**
 * This is the executable class for performing a cycle driven simulation.
@@ -37,21 +37,18 @@ public class Simulator {
 // ============== fields ===============================================
 // =====================================================================
 
-/** 
- * Parameter representing the maximum number of cycles to be performed 
- */
+/** Gives the number of cycles to complete */
 public static final String PAR_CYCLES = "simulation.cycles";
 
 /**
- * If this parameter is present, the order of visiting each node is shuffled
- * at each cycle. The default is no shuffle.
- */
+* if set, it means the order of visiting each node is shuffled in each cycle.
+* The default is no shuffle
+*/
 public static final String PAR_SHUFFLE = "simulation.shuffle";
 
 /**
- * Parameter representing the number of times the experiment is run.
- * Defaults to 1.
- */
+* The number of times the experiment is run. Defaults to 1.
+*/
 public static final String PAR_EXPS = "simulation.experiments";
 
 /**
@@ -59,125 +56,61 @@ public static final String PAR_EXPS = "simulation.experiments";
 */
 public static final String PAR_GETPAIR = "simulation.getpair";
 
-/**
- * This is the prefix for initializers. These have to be of type
- * {@link Dynamics}.
- */
 public static final String PAR_INIT = "init";
 
 /**
- * This is the prefix for network dynamism managers. These have to be of
- * type {@link Dynamics}.
- */
+* This is the prefix for network dynamism managers. These have to be of
+* type {@link Dynamics}.
+*/
 public static final String PAR_DYN = "dynamics";
 
-/**
- * This is the prefix for observers. These have to be of type
- * {@link Observer}.
- */
 public static final String PAR_OBS = "observer";
-
 
 // --------------------------------------------------------------------
 
-/** The maximum number of cycles to be performed */
-protected static int cycles;
+/** the number of independent restarted simulations to be performed */
+private static int cycles;
 
-protected static boolean shuffle;
+private static boolean shuffle;
 
-/** The number of independent restarted simulations to be performed */
-protected static int exps;
+private static int exps;
 
-protected static boolean getpair_rand;
+private static boolean getpair_rand;
 
 /** holds the observers of this simulation */
-protected static Observer[] observers=null;
+private static Observer[] observers=null;
 
 /** holds the modifiers of this simulation */
-protected static Dynamics[] dynamics=null;
+private static Dynamics[] dynamics=null;
 
 /** Holds the observer schedulers of this simulation */
-protected static Scheduler[] obsSchedules = null;
+private static Scheduler[] obsSchedules = null;
 
 /** Holds the dynamics schedulers of this simulation */
-protected static Scheduler[] dynSchedules = null;
+private static Scheduler[] dynSchedules = null;
 
-/** Holds the protocol schedulers of this simulation */
-protected static Scheduler[] protSchedules = null;
+// XXX it would be possible to schedule protocols too the same way
 
 
 // =============== protected methods ===================================
 // =====================================================================
 
-/**
- * Load and run initializers.
- */
+
 protected static void runInitializers() {
 	
 	Object[] inits = Configuration.getInstanceArray(PAR_INIT);
-	String names[] = Configuration.getNames(PAR_INIT);
-	
+
 	for(int i=0; i<inits.length; ++i)
 	{
 		System.err.println(
-		"- Running initializer " +names[i]+ ": " + inits[i].getClass());
+		"- Running initializer " + i + ": " + inits[i].getClass());
 		((Dynamics)inits[i]).modify();
 	}
 }
 
 // --------------------------------------------------------------------
 
-protected static String[] loadObservers()
-{
-	// load observers
-	String[] names = Configuration.getNames(PAR_OBS);
-	observers = new Observer[names.length];
-	obsSchedules = new Scheduler[names.length];
-	for(int i=0; i<names.length; ++i)
-	{
-		observers[i]=(Observer)Configuration.getInstance(names[i]);
-		obsSchedules[i] = new Scheduler(names[i]);
-	}
-	System.err.println("Simulator: loaded observers "+Arrays.asList(names));
-	return names;
-}
-
-//---------------------------------------------------------------------
-
-protected static String[] loadDynamics()
-{
-	// load dynamism managers
-	String[] names = Configuration.getNames(PAR_DYN);
-	dynamics = new Dynamics[names.length];
-	dynSchedules = new Scheduler[names.length];
-	for(int i=0; i<names.length; ++i)
-	{
-		dynamics[i]=(Dynamics)Configuration.getInstance(names[i]);
-		dynSchedules[i] = new Scheduler(names[i]);
-	}
-	System.err.println("Simulator: loaded dynamics "+Arrays.asList(names));
-	return names;
-}
-
-//---------------------------------------------------------------------
-
-protected static void loadProtocolSchedules()
-{
-	// load protocol schedulers
-	String[] names = Configuration.getNames(Node.PAR_PROT);
-	protSchedules = new Scheduler[names.length];
-	for(int i=0; i<names.length; ++i)
-	{
-		protSchedules[i] = new Scheduler(names[i]);
-	}
-}
-
-//---------------------------------------------------------------------
-
-/** 
- * Execute all the protocols. 
- */
-protected static void nextRound(int cycle) {
+protected static void nextRound() {
 
 	if( shuffle )
 	{
@@ -200,11 +133,6 @@ protected static void nextRound(int cycle) {
 		// (instead of running all on one node at the same time?)
 		for(int k=0; k<len; ++k)
 		{
-			// Check if the protocol should be executed, given the
-			// associated scheduler.
-			if (!protSchedules[k].active(cycle))
-				continue;
-				
 			CommonState.setPid(k);
 			Protocol protocol = node.getProtocol(k);
 			if( protocol instanceof CDProtocol )
@@ -216,17 +144,9 @@ protected static void nextRound(int cycle) {
 	}
 }
 
-//---------------------------------------------------------------------
+// ---------------------------------------------------------------------
 
-/**
- * Runs an experiment
- */
-protected static void nextExperiment() 
-{
-	// Reading parameter
-	cycles = Configuration.getInt(PAR_CYCLES);
-	shuffle = Configuration.contains(PAR_SHUFFLE);
-	getpair_rand = Configuration.contains(PAR_GETPAIR);
+protected static void nextExperiment() {
 
 	// initialization
 	System.err.println("Simulator: resetting");
@@ -235,12 +155,29 @@ protected static void nextExperiment()
 	CommonState.setT(0); // needed here
 	CommonState.setPhase(CommonState.PRE_DYNAMICS);
 	runInitializers();
-			
-	// Load observer, dynamics, protocol schedules
-	loadObservers();
-	loadDynamics();
-	loadProtocolSchedules();
-	
+
+	// load analizers
+	String[] names = Configuration.getNames(PAR_OBS);
+	observers = new Observer[names.length];
+	obsSchedules = new Scheduler[names.length];
+	for(int i=0; i<names.length; ++i)
+	{
+		observers[i]=(Observer)Configuration.getInstance(names[i]);
+		obsSchedules[i] = new Scheduler(names[i]);
+	}
+	System.err.println("Simulator: loaded observers "+Arrays.asList(names));
+
+	// load dynamism managers
+	names = Configuration.getNames(PAR_DYN);
+	dynamics = new Dynamics[names.length];
+	dynSchedules = new Scheduler[names.length];
+	for(int i=0; i<names.length; ++i)
+	{
+		dynamics[i]=(Dynamics)Configuration.getInstance(names[i]);
+		dynSchedules[i] = new Scheduler(names[i]);
+	}
+	System.err.println("Simulator: loaded modifiers "+Arrays.asList(names));
+
 	// main cycle
 	System.err.println("Simulator: starting simulation");
 	for(int i=0; i<cycles; ++i)
@@ -276,7 +213,7 @@ protected static void nextExperiment()
 		if( stop ) break;
 
 		// do one cycle
-		nextRound(i);
+		nextRound();
 		System.err.println("Simulator: cycle "+i+" done");
 	}
 
@@ -293,7 +230,6 @@ protected static void nextExperiment()
 // =============== public methods ======================================
 // =====================================================================
 
-
 /**
 *  Loads configuration and executes the simulation.
 */
@@ -305,18 +241,19 @@ public static void main(String[] pars) throws Exception {
 	// XXX we assume here that config is properties format
 	System.err.println("Simulator: loading configuration");
 	Configuration.setConfig( new ConfigProperties(pars) );
-
-	int exps = Configuration.getInt(PAR_EXPS,1);
+	cycles = Configuration.getInt(PAR_CYCLES);
+	shuffle = Configuration.contains(PAR_SHUFFLE);
+	exps = Configuration.getInt(PAR_EXPS,1);
+	getpair_rand = Configuration.contains(PAR_GETPAIR);
 
 	try {
 
-		for(int k=0; k<exps; ++k)
-		{
-			System.err.println("Simulator: starting experiment "+k);
-			System.out.println("\n\n");
-	
-			nextExperiment();
-		}
+	for(int k=0; k<exps; ++k)
+	{
+		System.err.println("Simulator: starting experiment "+k);
+		System.out.println("\n\n");
+		nextExperiment();
+	}
 	
 	} catch (MissingParameterException e) {
 		System.err.println(e.getMessage());
@@ -325,14 +262,11 @@ public static void main(String[] pars) throws Exception {
 		System.err.println(e.getMessage());
 		System.exit(1);
 	}
-
-
+	
 	// undocumented testing capabilities
 	if(Configuration.contains("__t")) 
 		System.out.println(System.currentTimeMillis()-time);
 	if(Configuration.contains("__x")) Network.test();
-
-
 }
 
 }

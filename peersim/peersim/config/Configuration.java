@@ -18,147 +18,20 @@
 		
 package peersim.config;
 
-import java.lang.reflect.*;
 import java.util.*;
+import java.lang.reflect.*;
 
 /**
 * Fully static class to store configuration information.
 * Contains methods to set configuration data and utility methods to read
 * items based on their names. Its other purpose is to hide the actual
 * implementation of the configuration which can be Properties, XML, whatever.
-* <p>
-* Numeric configuration items can complex expressions, that are parsed
-* through Java Expression Parser (http://www.singularsys.com/jep/).
-* <p>
-* The configuration is generally blind to the semantics of the entries.
-* there is an exception, the entries that start with "protocol". These
-* entries are pre-processed a bit to enhance performance:
-* protocol names are associated to numeric protocol identifiers
-* through method {@link #getPid}.
-* <h2>Expressions</h2>
-  You can use expressions in place of numeric values at all places.
-  This is implemented using <a href="http://www.singularsys.com/jep/">JEP</a>.
-  You can write expression using the syntax that you can
-  find <a href="http://www.singularsys.com/jep/doc/html/op_and_func.html">
-  here</a>. For example,
-  <pre>
-  MAG 2
-  SIZE 2^MAG
-  </pre>
-  SIZE=4.
-  You can also have complex expression trees like this:
-  <pre>
-  A B+C
-  B D+E
-  C E+F
-  D 1
-  E F
-  F 2
-  </pre>
-  that results in A=7, B=3, C=4, D=1, E=2, F=2
-
-  <p>Expressions are parsed recursively. Note that no optimization are
-  done, so expression F may be evaluated three times here (due to the
-  fact that appears twice in C and once in B). But since this should 
-  be done only in the initialization phase, this is not a real problem.
-
-  <p>Finally, recursive definitions are not allowed (and without
-  function definitions, they do not mean anything). Since it is
-  difficult to discover complex recursive chains, I've decided
-  to use a simple trick: if the depth of recursion is greater
-  than a given threshold (configurable, currently 100), an error
-  message is printed. This avoid to fill the stack, that results
-  in an anonymous OutOfMemoryError. So, if you write
-  <pre>
-  overlay.size SIZE
-  SIZE SIZE-1
-  </pre>
-  you get an error message:
-  Parameter "overlay.size": Probable recursive definition -
-  exceeded maximum depth 100
-  <h2>Ordering</h2>
-  It is possible to assign arbitrary names to multiple instances of a given
-  entity, like eg an observer or protocol. For example you can write
-
-  <pre>
-  observer.conn ConnectivityObserver
-  observer.0 Class1
-  observer.2 Class2
-  </pre>
-  This trick works with any prefix, not only observer. When method
-  {@link #getNames} or {@link #getInstanceArray} are called, eg
-  <code>getNames("observer")</code>, the the order in which these
-  are returned is alphabetical:
-  <code>["observer.0","observer.2","observer.conn"]</code>.
-  If you are not satisfied with lexicographic order,
-  you can specify the order in this way.
-  <pre>
-  order.observer 2,conn,0
-  </pre>
-  where the names are separated by any non-word character (non alphanumeric
-  or underscore).
-  If not all names are listed then the given order is followed by alphabetical
-  order of the rest of the items, eg
-  <pre>
-  order.observer 2
-  </pre>
-  results in
-  <code>["observer.2","observer.0","observer.conn"]</code>.
-  <p>
-  It is also possible to exclude elements from the list, while
-  ordering them. The syntax is identical to that of the above, only the
-  parameter name begins with <code>include</code>. For example
-  <pre>
-  include.observer conn 2
-  </pre>
-  will result in returning <em>only</em> <code>observer.conn</code> and
-  <code>observer.2</code>, in this order.
-  Note that for example the empy list results in a zero length array in this
-  case.
-  <em>Important!</em> If include is
-  defined then ordering is ignored. That is, include is stronger than order.
-*
 */
 public class Configuration {
 
 
 // =================== static fields =================================
 // ===================================================================
-
-/**
- * The parameter name to configure a maximum depth different from
- * default. Normally you don't want to set this. The default is 100.
- */
-private static final String PAR_MAXDEPTH = "expressions.maxdepth"; 
-
-/**
- * The parameter name to configure ordering of the array as returned by
- * {@link #getInstanceArray} and {@link #getNames}.
- * It is read by these methods. This is realy a prefix which is followed by
- * the type specifier. For example: "order.protocol" will define the
- * order of configuration entries that start with
- * "protocol", but it works for any prefix.
- */
-public static final String PAR_ORDER = "order"; 
-
-/**
- * The parameter name to configure ordering and exclusion of the array as
- * returned by {@link #getInstanceArray} and {@link #getNames}.
- * It is read by these methods. This is realy a prefix which is followed by
- * the type specifier. For example: "include.protocol" will define the
- * set and order of configuration entries that start with
- * "protocol", but it works for any prefix.
- */
-public static final String PAR_INCLUDE = "include"; 
-
-// XXX it's ugly because it replicates the definition of PAR_PROT, but
-// this would be the only dependence on the rest of the core...
-/**
- * The parameter name prefix to specify the set of protocol entries that are
- * used
- * to calculate the protocol identifiers returned by {@link #getPid}.
- */
-public static final String PAR_PROT = "protocol"; 
 
 
 /**
@@ -167,26 +40,11 @@ public static final String PAR_PROT = "protocol";
 private static Properties config = null;
 
 
-/**
- * Map associating string protocol names to the numeric protocol
- * identifiers. The protocol names are understood without prefix.
- */
-private static Map protocols;
-
-
-/**
- *  The maximum depth that can be reached when analyzing expressions.
- *  This value can be substituted by setting the configuration parameter
- *  PAR_MAXDEPTH.
- */
-private static int maxdepth = 100;
-
 // =================== static public methods =========================
 // ===================================================================
 
 
-/** 
-* Sets the system-wide configuration in Properties format.
+/** Sets the system-wide configuration in Properties format.
 * @param p The Properties object containing coniguration info
 * @return The Properties object that was set previously
 */
@@ -194,17 +52,6 @@ public static Properties setConfig( Properties p ) {
 
 	Properties prev = config;
 	config = p;
-	maxdepth = Configuration.getInt(PAR_MAXDEPTH, 100);
-	
-	// initialize protocol id-s
-	protocols = new HashMap();
-	String[] prots = getNames(PAR_PROT);//they're retunred in correct order
-	for(int i=0; i<prots.length; ++i)
-	{
-		protocols.put(  prots[i].substring(PAR_PROT.length()+1),
-				new Integer(i));
-	}
-	
 	return prev;
 }
 
@@ -241,13 +88,39 @@ public static int getInt( String name, int def ) {
 // -------------------------------------------------------------------
 
 /**
-* Reads given configuration item. If not found, throws an 
-* IllegalArgumentException.
+* Reads given configuration item. If not found, returns the default value.
 * @param name Name of configuration property
 */
-public static int getInt( String name ) 
-{
-	return (int) Math.round(getVal(name, name, 0));
+public static int getInt( String name ) {
+
+	String s = config.getProperty(name);
+	if (s == null || s.equals(""))
+		throw new MissingParameterException(name);
+	
+	try
+	{
+		// The value is parsed as a double and converted to an int,
+		// because it can have been obtained from a range.
+		return (int) Double.parseDouble(s);
+	}
+	catch (NumberFormatException e)
+	{
+	
+		// Check whether the value can be interpreted as parameter name
+		String ref = config.getProperty(s);
+		if (ref == null || ref.equals("")) {
+			throw new IllegalParameterException(name,
+				"Value " + s + " is not an int");
+		}
+		// It is a parameter name; we try to obtain its value.
+		try {
+			return (int) Double.parseDouble(ref);
+		} catch (NumberFormatException e1) {
+			throw new IllegalParameterException(name,
+				"Value " + s + " is not an int");	
+		}
+	}
+
 }
 
 // -------------------------------------------------------------------
@@ -272,13 +145,37 @@ public static long getLong( String name, long def ) {
 // -------------------------------------------------------------------
 
 /**
-* Reads given configuration item. If not found, throws an 
-* IllegalArgumentException.
+* Reads given configuration item. If not found, returns the default value.
 * @param name Name of configuration property
 */
-public static long getLong( String name ) 
-{
-	return Math.round(getVal(name, name, 0));
+public static long getLong( String name ) {
+ 
+	String s = config.getProperty(name);
+	if (s == null || s.equals(""))
+		throw new MissingParameterException(name);
+	
+	try
+	{
+		// The value is parsed as a double and converted to a long,
+		// because it can have been obtained from a range.
+		return (long) Double.parseDouble(s);
+	}
+	catch (NumberFormatException e)
+	{
+		// Check whether the value can be interpreted as parameter name
+		String ref = config.getProperty(s);
+		if (ref == null || ref.equals("")) {
+			throw new IllegalParameterException(name,
+				"Value " + s + " is not an long");
+		}
+		// It is a parameter name; we try to obtain its value.
+		try {
+			return (long) Double.parseDouble(ref);
+		} catch (NumberFormatException e1) {
+			throw new IllegalParameterException(name,
+				"Value " + s + "is not an long");	
+		}
+	}
 }
 
 
@@ -304,72 +201,36 @@ public static double getDouble( String name, double def ) {
 // -------------------------------------------------------------------
 
 /**
-* Reads given configuration item. If not found, throws an 
-* IllegalArgumentException.
+* Reads given configuration item. If not found, returns the default value.
 * @param name Name of configuration property
 */
-public static double getDouble( String name ) 
-{
-	return getVal(name, name, 0);
-}
+public static double getDouble( String name ) {
 
-//-------------------------------------------------------------------
-
-/**
- * Read numeric property values, parsing expression if necessary.
- * 
- * @param initial the property name that started this expression evaluation
- * @param property the current property name to be evaluated
- * @param depth the depth reached so far
- * @return the evaluation of the expression associated to property  
- */
-public static double getVal(String initial, String property, int depth)
-{
-	if (depth > maxdepth) {
-		throw new IllegalParameterException(initial, 
-		"Probable recursive definition - exceeded maximum depth " + 
-		maxdepth);
-	}
-	
-	String s = config.getProperty(property);
+	String s = config.getProperty(name);
 	if (s == null || s.equals(""))
-		throw new MissingParameterException(property, 
-				" when evaluating property " + initial);
+		throw new MissingParameterException(name);
 	
-	org.nfunk.jep.JEP jep = new org.nfunk.jep.JEP();
-	jep.setAllowUndeclared(true);
-	
-	jep.parseExpression(s);
-	String[] symbols = getSymbols(jep);
-	for (int i=0; i < symbols.length; i++) {
-		double d = getVal(initial, symbols[i], depth+1);
-		jep.addVariable(symbols[i], d);
+	try
+	{
+		return Double.parseDouble(s);
 	}
-	
-	return jep.getValue();
-}
-
-//-------------------------------------------------------------------
-
-/**
- * Returns an array of string, containing the symbols contained
- * in the expression parsed by the specified JEP parser.
- * @param jep the java expression parser containing the list
- *   of variables
- * @return an array of strings.
- */
-private static String[] getSymbols(org.nfunk.jep.JEP jep)
-{
-	Hashtable h = jep.getSymbolTable();
-	String[] ret = new String[h.size()];
-	Enumeration e = h.keys();
-	int i = 0;
-	while (e.hasMoreElements()) {
-		ret[i++] = (String) e.nextElement();
+	catch (NumberFormatException e)
+	{
+		// Check whether the value can be interpreted as parameter name
+		String ref = config.getProperty(s);
+		if (ref == null || ref.equals("")) {
+			throw new IllegalParameterException(name,
+				"Value " + s + " is not a double");
+		}
+		// It is a parameter name; we try to obtain its value.
+		try {
+			return Double.parseDouble(ref);
+		} catch (NumberFormatException e1) {
+			throw new IllegalParameterException(name,
+				"Value " + s + "is not a double");	
+		}
 	}
-	return ret;
 }
-
 
 // -------------------------------------------------------------------
 
@@ -393,60 +254,18 @@ public static String getString( String name, String def ) {
 // -------------------------------------------------------------------
 
 /**
-* Reads the configuration item associated to the specified property.
-* @param property Name of configuration property
+* Reads given configuration item. If not found, returns the default value.
+* @param name Name of configuration property
 */
-public static String getString( String property ) {
+public static String getString( String name ) {
 
-	String result = config.getProperty(property);
-	if( result == null ) throw new MissingParameterException(property);
+	String result = config.getProperty(name);
+	if( result == null ) throw new MissingParameterException(name);
 	
 	return result;
 }
 
-//-------------------------------------------------------------------
-
-/**
- * Reads the given string property from the ocnfiguration and returns the
- * associated numeric 
- * protocol identifier. The value of the property should be the name of a
- * protocol, which is an arbitrary string, and which gets mapped to a
- * number, a protocol id, according to some sorting defined over the
- * protocol names. By default th sorting is alphabetical.
- *  
- * @param property the property name
- * @return the numeric protocol identifier associated to the protocol
- *   name
- */
-public static int getPid( String property ) {
-	
-	String protname = getString(property);
-	return lookupPid(protname);
-}
-
-//-------------------------------------------------------------------
-
-/**
- * Reads the given string property and returns the associated numeric 
- * protocol identifier. The parameter should be the name of a
- * protocol, which is an arbitrary string, and which gets mapped to a
- * number, a protocol id, according to some sorting defined over the
- * protocol names. By default the sorting is alphabetical.
- * 
- * @param protname the protocol name.
- * @return the numeric protocol identifier associated to the protocol
- *   name
- */
-public static int lookupPid( String protname ) {
-	
-	Integer ret = (Integer) protocols.get(protname); 
-	if (ret == null) {
-		throw new MissingParameterException(PAR_PROT+"."+protname);
-	}
-	return ret.intValue();
-}
-
-//-------------------------------------------------------------------
+// -------------------------------------------------------------------
 
 /**
  * Returns the class object for the specified classname. If the specified 
@@ -472,26 +291,24 @@ private static Class getClass(String property, String classname)
 		}
 	}
 	if (c == null) {
-		// Maybe there are multiple classes with the same
-		// non-qualified name.
+		// Maybe there are multiple classes with the same non-qualified name.
 		String fullname = ClassFinder.getQualifiedName(classname);
 		if (fullname != null && fullname.indexOf(',') >= 0) {
 			throw new IllegalParameterException(property,
-			"The non-qualified class name " + classname + 
-			" corresponds to multiple fully-qualified classes: " +
-			fullname);
+				"The non-qualified class name " + classname + 
+				" corresponds to multiple fully-qualified classes: " +
+				fullname);
 		}
 	}
 	if (c == null) {
-		// Last attempt: maybe the fully classified name is wrong,
-		// but the classname is correct. 
+		// Last attempt: maybe the fully classified name is wrong, but the
+		// classname is correct. 
 		String shortname = ClassFinder.getShortName(classname);
 		String fullname = ClassFinder.getQualifiedName(shortname);
 		if (fullname != null) {
 			throw new IllegalParameterException(property,
-			"Class " + classname + 
-			" does not exists. Possible candidate(s): " +
-			fullname);
+				"Class " + classname + 
+				" does not exists. Possible candidate(s): " +	fullname);
 		}		
 	}
 	if (c == null) {
@@ -516,7 +333,7 @@ public static Object getInstance( String name ) {
 	String classname = config.getProperty(name);
 	if (classname == null) throw new MissingParameterException(name);
 
-	Class c = getClass(name, classname);		
+  Class c = getClass(name, classname);		
 		
 	try {
 		Class pars[] = { String.class };
@@ -559,15 +376,15 @@ public static Object getInstance( String name ) {
 * @throws RuntimeException if there's any problem with creating the object.
 */
 public static Object getInstance( String name, Object obj ) {
-// XXX if necessary, API will have to be provided to force the (String,Object)
+// XXX if necessari, API will have to be provided to force the (String,Object)
 // constructor and not using the default (string) constructor
 
 	String classname = config.getProperty(name);
 	if (classname == null) throw new MissingParameterException(name);
 	
-	Class c = getClass(name, classname);		
+  Class c = getClass(name, classname);		
 
-	try
+  try
 	{
 		Class pars[] = { String.class, Object.class };
 		Constructor cons = c.getConstructor( pars );
@@ -624,32 +441,15 @@ public static Object[] getInstanceArray( String name ) {
 //-------------------------------------------------------------------
 
 /**
- * Returns an array of names starting with the specified name.
- * {@link #getInstanceArray} will use this method to create instances.
- * In other words, calling
- * {@link #getInstance(String)} with these names results in the
- * same instances {@link #getInstanceArray} returns.
- *
- * <p>
- * The array is sorted as follows. If there is no config entry
- * <code>PAR_INCLUDE+"."+name</code> or
- * <code>PAR_ORDER+"."+name</code> then the order is aplhabetical. Otherwise
- * this entry defines the order. It must contain a list of entries
- * from the values that belong to the given <code>name</code>, but
- * <em>without</em> the prefix. That is, eg <code>"first"</code> instead of
- * <code>name+".first"</code>.
- * It is assumed that these values contain only word characters (alphanumeric
- * and underscore '_'. The order configuration entry thus contains a list
- * of entries separated by any non-word characters.
- * <p>
- * It is not required that all entries are listed.
- * If {@link #PAR_INCLUDE} is used, then only those entries are returned
- * that are listed.
- * If {@link #PAR_ORDER} is used, then all names are returned,
- * but the array will start
- * with those that are listed. The rest of the names follow in alphabetical
- * order.
- */
+* Returns an array of names of maximal length of the form
+* name+".0", name+".1", etc, where all names in the list are existing
+* property names. If name+"0" is not an existing property name, returns an
+* empty array.
+* {@link #getInstanceArray} will use this method to create instances.
+* In other words, calling
+* {@link #getInstance(String)} with these names results in the
+* same instances {@link #getInstanceArray} returns.
+*/
 public static String[] getNames( String name ) 
 {
 	ArrayList ll = new ArrayList();
@@ -661,81 +461,10 @@ public static String[] getNames( String name )
 		if (key.startsWith(pref) && key.indexOf(".", pref.length())<0)
 			ll.add(key);
 	}
-	String[] ret = (String[])ll.toArray(new String[ll.size()]);
-	return Configuration.order(ret,name);
-}
-
-//-------------------------------------------------------------------
-
-/**
- * The input of this method is a set of item <code>names</code>
- * (eg initializers,
- * observers, dynamics and protocols) and a string specifying the type
- * (prefix) of these.
- * The output is in <code>names</code>, which will contain a permutation
- * of the original array.
- * Parameter PAR_INCLUDE+"."+type, or if not present, PAR_ORDER+"."+type
- * is read from the
- * configuration. If non of them are defined then the order is identical to
- * that of <code>names</code>. Otherwise the configuration entry must contain
- * entries
- * from <code>names</code>. It is assumed that the entries in
- * <code>names</code> contain only word characters (alphanumeric
- * and underscore '_'. The order configuration entry thus cintains a list
- * of entries from <code>names</code> separated by any non-word characters.
- * <p>
- * It is not required that all entries are listed.
- * If PAR_INCLUDE is used, then only those entries are returned that are
- * listed.
- * If PAR_ORDER is used, then all names are returned, but the array will start
- * with those that are listed. The rest of the names follow in alphabetical
- * order.
- * 
- * 
- * @param names
- *   the set of item names to be searched
- * @param type 
- *   the string identifying the particular set of items to be inspected
- */
-private static String[] order(String[] names, String type)
-{
-	String order = getString(PAR_INCLUDE+"."+type, null);
-	boolean include = order!=null;
-	if( !include ) order = getString(PAR_ORDER+"."+type, null);
-	
-	int i=0;
-	if( order != null && !order.equals("") )
-	{
-		// split around non-word characters
-		String[] sret = order.split("\\W+");
-		for (; i < sret.length; i++)
-		{
-			int j=i;
-			for(; j<names.length; ++j)
-				if( names[j].equals(type+"."+sret[i])) break;
-			if( j == names.length )
-			{
-				throw new IllegalParameterException(
-				(include?PAR_INCLUDE:PAR_ORDER)+"."+type,
-				type + "." + sret[i]+ " is not defined.");
-			}
-			else // swap the element to current position
-			{
-				String tmps = names[j];
-				names[j] = names[i];
-				names[i] = tmps;
-			}
-		}
-	}
-	
-	Arrays.sort(names,i,names.length);
-	int retsize = ( include ? i : names.length );
-	String [] ret = new String[retsize];
-	for( int j=0; j<retsize; ++j ) ret[j] = names[j];
+	String[] ret = (String[])ll.toArray(new String[0]);
+	Arrays.sort(ret);
 	return ret;
 }
-
-
 
 }
 

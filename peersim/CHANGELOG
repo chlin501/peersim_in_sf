@@ -1,74 +1,3 @@
-MJ 2/11/2004
-- changed config parameter name "protocolID" to "protocol" in package
-  distributions. Protocol id is an internal concept now, transparent to the
-  user and protocol name should be used (which can also be a number of course).
-
-MJ 29/10/2004
-- new constructor parameter for OverlayGraph so that setEdge could work in
-  an undirected manner (sets opposite edge too). OverlayGraph is interpreted as
-  directed, nontheless, because setEdge is not the only way to set edges.
-- wireRegularRandom has new config parameter "undirected", which uses the
-  feature above 
-- new toString to IdleProtocol, 
-
-MJ 25/10/2004
-- added method lookupPid to Configuration to make it possible to search
-  for a protocol id based on the protocol name
-
-MJ 22/10/2004
-- added the possibility of excluding entities that are present in the config
-  using a simple config parameter: eg "include observer aa bb 23". This
-  works exactly like the order feature only those names that are not listed
-  are excluded. [see classdoc of Configuration]
-- some more minor refactoring of Simulator and OrderSimulator
-
-MJ 21/10/2004
-- some refactoring of the most recent changes for simplification and
-  clarification and which include
-  - moving order-handling into Configuration and so removing it from the
-    rest of the code: now ordering is transparent to Simulator.
-  - removing setPid from Configuration and funtionality to assign ID-s to
-    protocols names is also moved into Configuration completely. The rest of
-    the code now can use simply getPid after loading the config to get
-    protocol id.
-  - separating alternative style of configuration to the new OrderSimulator
-    that now extends the basic Simulator class. to use the config property
-    "order" you need to launch OrderSimultor. All other features and orderings
-    like "order.protocol" are understood by Simulator too.
-- enhancement of documentation by adding stuff written by Alberto to the class
-  docs of OrderSimulator and Configuration.
-
-AM 17/10/2004
-- RangeSimulator: now it works by calling Simulator, so we don't
-  need to maintain two simulators. Using RangeSimulator
-  you can write stuff like this:
-  range.0 MAG;10:18
-  meaning that the variable MAG will go from 10 to 18.
-- Expression parsing added. Now it is possible to use expression in place
-  of simple numeric values in the configuration (with all simulators),
-  using property names as symbols.
-  [JM 21/10/2004: See the class docs of Configuration]
-- Protocol schedulers. 
-  Now protocols are scheduled as the other objects. Eg you can execute
-  a protocol every two steps.
-- now it's possible to use not only number but also any
-  alphanumeric symbol to identify a protocol, observer, etc (eg protocol.first).
-  The Configuration now has a getPid method that assigns a fixed numeric ID to
-  a protocol, becuase it is still much more efficient to use numbers
-  internally.
-  
-  !!WARNING!!: this change is backwards compatible but if you want to use
-  arbitrary protocol id-s in you new config files, you mut use the
-  getPid method to get the numeric id in your new protocols.
-- ordering: apart from the deault aplhabetical order of component execution
-  it is possible to define an alternative ordering using order properties in
-  the configuration, like protocol.order, observer.order, etc. 
-- If config parameter "order" is defined, it switches the simulator into
-  a new style of operation that is completely detremined by this parameter,
-  that allows for an ordering of all components relative to each other. Eg
-  order observer.0,protocol.sort,observer.2,protocol.rank,dynamics.crash
-  [JM 21/10/2004: See the class docs of OrderSimulator]
-
 AM 15/10/2004
 - added the peersim.config.ClassFinder class, whose task is to
   associate non-qualified names to qualified names. 
@@ -77,12 +6,6 @@ AM 15/10/2004
   configuration files. If a unique package-qualified class is
   found, it is used to create new instances. Otherwise,
   smart error messages are printed, when possible.
-
-
-MJ 14/10/2004:
-VERSION 0.1 RELEASED
-------------------------------------------------------------------
-------------------------------------------------------------------
 
 AM 14/10/2004
 - added maxcount and mincount to the toString method of 
@@ -178,7 +101,5 @@ record this info.
 fixed some config files in lpbcast and scamp packages
 
 VERSION 0.0 RELEASED
-------------------------------------------------------------------
-------------------------------------------------------------------
 
 

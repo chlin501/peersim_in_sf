@@ -51,7 +51,7 @@ public static final String PAR_MIN = "min";
  * String name of the parameter that defines the protocol to initialize.
  * Parameter read will has the full name <tt>prefix+"."+PAR_PROT</tt>
  */
-public static final String PAR_PROT = "protocol";
+public static final String PAR_PROTID = "protocolID";
 
 //--------------------------------------------------------------------------
 // Fields
@@ -81,7 +81,7 @@ public LinearDistribution(String prefix)
 {
 	max = Configuration.getDouble(prefix+"."+PAR_MAX, Network.size()-1);
 	min = Configuration.getDouble(prefix+"."+PAR_MIN,-max);
-	protocolID = Configuration.getPid(prefix+"."+PAR_PROT);
+	protocolID = Configuration.getInt(prefix+"."+PAR_PROTID);
 }
 
 //--------------------------------------------------------------------------
@@ -93,6 +93,7 @@ public LinearDistribution(String prefix)
 public void modify()
 {
 	double step = (max-min)/(Network.size()-1);
+	double tmp;
 	for(int i=0; i<Network.size(); ++i)
 	{
 		lastval = i*step+min;
