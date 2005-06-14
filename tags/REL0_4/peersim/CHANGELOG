@@ -1,0 +1,446 @@
+AM 14/06/2005
+VERSION 0.4 RELEASED
+------------------------------------------------------------------
+------------------------------------------------------------------
+
+AM 14/06/05
+- Modified the configuration mechanism in order to perform computations
+  with BigInteger instead of doubles converted to long. To do so, this
+  version compiles only with jep2.3.0 and djep1.0.0.
+- Added an experimental configuration mechanism that tries to give
+  suggestions when properties are not found. just an attempt, can
+  be removed.
+- Corrected a bug in peersim.cdsim.OrderSimulator, in order to enable
+  to run dynamics with the FINAL specification.
+- Simplified the protocol creation mechanism in GeneralNode; in this
+  way, protocols that have been already created can be referenced by
+  other protocols in their constructors.
+- corrected some documentation
+
+MJ 14/06/05
+- Added some methods to IncrementalFreq (submitted by Spyros Voulgaris)
+
+MJ 31/05/05
+- Removed unused argument from IncrementalFreq.getN(), and changed some
+  of the fields in IncrementalFreq from private to protected
+- CHANGED BEHAVIOUR OF WireRegualrRandom. It was not realy regular all the time
+  because neighbors were sampled with replacement, and no parallel edges were
+  added. Now it is realy regular. This has only a negligible effect on most
+  of the scenarios peersim was used in so far, but at least this is finally
+  fixed.
+
+MJ 26/05/05
+- getString now removes trailing spaces from string value parameters
+  in the configuration
+
+AM 13/05/05
+- modified the configuration parsing mechanism with a very simple extension
+  for brackets.
+  Writing something like:
+  
+  observer.degree GraphObserver 
+  {
+    protocol newscast
+    undir
+    graphobserver.fast
+  }
+  defines four properties:
+  
+  observer.degree GraphObserver 
+  observer.degree.protocol newscast
+  observer.degree.undir
+  observer.degree.graphobserver.fast
+  
+  See documentation for additional details (and limits).
+- added a debug.config feature to the config mechanism. Three possibilities:
+  debug.config -> only properties read during initializion, prints name=value
+  debug.config=contex -> as debug.config, but with additional information
+  debug.config=full -> all the properties, prints name=value
+- solved a bug in the config exceptions (MissingParameter and IllegalParameter);
+  the mechanism showing the line where the configuration method is invoked
+  was producing uncorrect lines sometimes.
+- DynamicNetwork: added support for turning down processes (instead of
+  crashing)
+- peersim.util.Log: added an optional parameter that can be used to
+  to print the time in logged line
+- RangeSimulator: ranges were trasnformed from configuration strings 
+  to doubles, stored as doubles, then transformed back to strings.
+  Now ranges are stored as strings, so it possible to use string
+  ranges.
+- transport package: now transports can be used not only to send
+  messages, but also to obtain an estimation of latency. The idea
+  is to provide a light-weight way to exploit the latency model
+  of transports in cycle-based protocols.
+- added the possibility to run dynamics at the end of simulation
+  (with the FINAL time specification)
+
+GJ 10/05/05
+- Fixed Scamp compilation bug (with JDK 5.0).
+- Other classes minor compilation warnings (unnecessary includes).
+
+MJ 31/03/05
+- Fixed a bug in DegreeStats related to the observation of dead links.
+
+MJ 30/03/05
+- For DegreeStats and BallExpansion: randomized the node selection when
+  the sample is only a subset of the network.
+
+MJ 26/03/05
+- Added boolean support to configuration (only constants so far).
+  Similar in function to "contains", take care. In the future we might add
+  boolean expressions, this is why it was added now.
+- Added FastUndirGraph, which is faster in most cases than ConstUndirGraph but
+  uses a huge amount of memory.
+- Refactored the graph observers so that they all extend GraphObserver
+  (check classdocs), that takes care of (among other things) hugely improving
+  performance when many graph observers are run together (pre-processing of
+  the overlay is done only once). As a result, some old config files change
+  their semantics: now for all observers, directed graph is the default, and
+  "undir" must be specified for an undirected version.
+
+MJ 24/03/05
+- Fixed a memory leak. It was present when simulating churn with
+  Linkable protocols. Now Linkables have to implement an "onKill"
+  method that is called when the hosting node gets removed from the
+  network. It should release links to other nodes. This prevents the
+  creation of large trees of unused objects with a root being referenced by a
+  live object.
+
+MJ 11/03/2005
+- BallExpansion is revised and now accepts parameter "stats".
+- IncrementalStats is extended with a new method to add an item k times.
+
+MJ 03/03/2005
+- GraphPrinter is extended with a new format and the possibility to save the
+  undirected version of the overlay. See class docs.
+
+MJ 02/03/2005
+- DegreeStats is extended by new options, to collect statistics about
+  dead links. See class documentation.
+
+MJ (adding changes by Spyros Voulgaris) 16/02/2005
+- DegreeStats now uses the (now correct) degree method instead of the size
+  of the returned neighbor list.
+
+MJ (adding changes by Spyros Voulgaris) 15/02/2005
+- OverlayNetwork had bugs: degree and getNeighbours did not conform
+  to the contract that only those links count for which both ends
+  are up. Fixed that. this means, degree(i) will return the number of
+  neighbors that are up, and will return 0 if node i is down. Similarly,
+  getNeighbours(i) returns an empty list if node i is down.
+
+MJ 02/02/2005
+- peersim.vetor.Normalizer now handles all zero vectors by throwing
+  an exception.
+
+MJ 01/02/2005
+- added the "undirected" option to WireFromFile, which makes it possible
+  to convert a directed graph stored in a file to an undirected one.
+
+MJ 22/01/2005
+- Moved the wiring algorithm from WireScaleFreeBA to GraphFactory
+  and added the possibility to generate a directed version.
+  Now, the "undirected" config parameter has to be given to get
+  an unirected graph. This breaks backwards compatibility, but I prefer
+  to have a consistent set of parameters for the wiring classes.
+  Also, some pretty printing changes on some wiring classes.
+
+AM 19/01/2005
+- Fixed a bug in ClassFinder, that was preventing it to run on
+  Windows.
+- Added a mechanism for running a class that implements both
+  the CDProtocol and EDProtocol interface just as an EDProtocol.
+- Now the prototype node has an index of -1 (to avoid confusion
+  with node with index 0)
+
+MJ 09/01/2005
+- Fixed a bug in PeakDistribution: it did not initialize as many nodes
+  as the number of peaks. Eg with one peak, one node is not initialized.
+
+MJ 06/01/2005
+VERSION 0.3 RELEASED
+------------------------------------------------------------------
+------------------------------------------------------------------
+
+MJ 04/01/2005
+- Minor changes to make some docs consistent with actual behavior and
+  vice versa
+
+AM 02/01/2005
+- Added the "pack" parameter (originally included in WireRegularRandom)
+  to all the Wire* classes. When this parameter is present, the pack()
+  method is called over the initialized protocol after all links have
+  been wired.
+
+MJ 02/01/2005
+- Fixed bug in WireScaleFreeBA: it ocasionally generated loop edges and in
+  general did not follow the BA model.
+
+AM 30/12/2004
+- Modified Makefile to remove "distributions" from the list of
+  packages that are inserted in the distribution.
+
+AM 30/12/2004
+- Modified aggregation to use to the new vector package. All the
+  implementation now use double instead of float.
+
+MJ 30/12/2004
+- Refactoring of classes that have to do with vector-like operations
+  on an array of values, where each element of the array is stored
+  by an instance of a SingleValue protocol. A new package called
+  peersim.vector was created and everything is moved there.
+- New classes dealing with vectors (see above) are added such as
+  observers and dynamics, into package peersim.vector.
+
+MJ 27/12/2004
+- Changed print in IncrementalFreq to print only those lines that have
+  non-zero frequency. Thanks to Spyros Voulgaris for pointing out the
+  problem.
+- Some minor refactoring and docs enhancement.
+
+GJ 19/12/2004
+- Fixed a Scamp cast bug in order to compile on JDK 1.5 . 
+
+MJ 16/12/2004
+- Fixed docs bug in FastConfig, thanks to Spyros Voulgaris, and added
+  hasLinkable.
+
+GJ 15/12/2004
+- Added ExtendedRandom class to support power-law distribution generation
+  (thanks to Simon Patarin for this code).
+- Updated CommonRandom class: now uses the an ExtendedRandom object.  
+
+AM 25/11/2004
+- Changed the implementation of the Event-driven simulator in order to
+  support 64 bits for time. Part of these bits (by default: 8) are used
+  to discriminate between events that occur at the same time.
+- Added getCycle and getTime methods to CommonState. getCycle() is just
+  new version of getT, which is now deprecated. getTime() returns the
+  current time in event-based simulations, and the current cycle in
+  cycle-based ones.
+- Modified all the peersim observers and dynamics that uses time, that
+  now use getTime instead of getCycle. In this way, they are compatible
+  with both ed and cd simulations.
+
+JM 17/11/2004
+- Small non-critical changes like docs, message texts, formatting, etc, plus
+  changes step to cstep in DaemonProtocol to avoid conflict with scheduling
+
+GJ 11/11/2004
+- Refactored aggregation and load balancing example code: now they use 
+  distribution.SingleValueHolder class and peersim.core.SingleValue interface
+  instead of example.aggregation.AbstractFunction and 
+  example.aggregation.Aggregation interface.
+- example.aggregation.AbstractFunction class and
+  example.aggregation.Aggregationinterface removed to avoid code replication.
+
+JM 9/11/2004
+- removed Protocols, added peersim.config.FastConfig instead. The new feature
+  is that FastConfig is automatic, it reads and stores "linkable" config lines
+  in a transparent fashion to the protocols.
+- toString method to SingleValueHolder, and made value protected
+- stripped Node interface to those methods that were actually used
+
+JM 9/11/2004
+- added nextLong(long) to CommonRandom
+
+AM 6/11/2004
+- added event-based simulator in package peersim.edsim
+- added transport protocols in package peersim.transport
+- added class peersim.Simulator to serve as the new entry point to peersim.
+  It looks at the configuration and launches the right simulator. Check
+  the classdocs of peersim.Simulator.
+  
+MJ 3/11/2004:
+VERSION 0.2 RELEASED
+------------------------------------------------------------------
+------------------------------------------------------------------
+
+GJ 3/11/2004
+- Added MedianStats class. It extracts the median value from a data collection;
+  it subclasses the IncrementalStats class.
+
+MJ 2/11/2004
+- changed config parameter name "protocolID" to "protocol" in package
+  distributions. Protocol id is an internal concept now, transparent to the
+  user and protocol name should be used (which can also be a number of course).
+
+MJ 29/10/2004
+- new constructor parameter for OverlayGraph so that setEdge could work in
+  an undirected manner (sets opposite edge too). OverlayGraph is interpreted as
+  directed, nontheless, because setEdge is not the only way to set edges.
+- wireRegularRandom has new config parameter "undirected", which uses the
+  feature above 
+- new toString to IdleProtocol, 
+
+MJ 25/10/2004
+- added method lookupPid to Configuration to make it possible to search
+  for a protocol id based on the protocol name
+
+MJ 22/10/2004
+- added the possibility of excluding entities that are present in the config
+  using a simple config parameter: eg "include observer aa bb 23". This
+  works exactly like the order feature only those names that are not listed
+  are excluded. [see classdoc of Configuration]
+- some more minor refactoring of Simulator and OrderSimulator
+
+MJ 21/10/2004
+- some refactoring of the most recent changes for simplification and
+  clarification and which include
+  - moving order-handling into Configuration and so removing it from the
+    rest of the code: now ordering is transparent to Simulator.
+  - removing setPid from Configuration and funtionality to assign ID-s to
+    protocols names is also moved into Configuration completely. The rest of
+    the code now can use simply getPid after loading the config to get
+    protocol id.
+  - separating alternative style of configuration to the new OrderSimulator
+    that now extends the basic Simulator class. to use the config property
+    "order" you need to launch OrderSimultor. All other features and orderings
+    like "order.protocol" are understood by Simulator too.
+- enhancement of documentation by adding stuff written by Alberto to the class
+  docs of OrderSimulator and Configuration.
+
+AM 17/10/2004
+- RangeSimulator: now it works by calling Simulator, so we don't
+  need to maintain two simulators. Using RangeSimulator
+  you can write stuff like this:
+  range.0 MAG;10:18
+  meaning that the variable MAG will go from 10 to 18.
+- Expression parsing added. Now it is possible to use expression in place
+  of simple numeric values in the configuration (with all simulators),
+  using property names as symbols.
+  [JM 21/10/2004: See the class docs of Configuration]
+- Protocol schedulers. 
+  Now protocols are scheduled as the other objects. Eg you can execute
+  a protocol every two steps.
+- now it's possible to use not only number but also any
+  alphanumeric symbol to identify a protocol, observer, etc (eg protocol.first).
+  The Configuration now has a getPid method that assigns a fixed numeric ID to
+  a protocol, becuase it is still much more efficient to use numbers
+  internally.
+  
+  !!WARNING!!: this change is backwards compatible but if you want to use
+  arbitrary protocol id-s in you new config files, you mut use the
+  getPid method to get the numeric id in your new protocols.
+- ordering: apart from the deault aplhabetical order of component execution
+  it is possible to define an alternative ordering using order properties in
+  the configuration, like protocol.order, observer.order, etc. 
+- If config parameter "order" is defined, it switches the simulator into
+  a new style of operation that is completely detremined by this parameter,
+  that allows for an ordering of all components relative to each other. Eg
+  order observer.0,protocol.sort,observer.2,protocol.rank,dynamics.crash
+  [JM 21/10/2004: See the class docs of OrderSimulator]
+
+AM 15/10/2004
+- added the peersim.config.ClassFinder class, whose task is to
+  associate non-qualified names to qualified names. 
+- changed peersim.config.Configuration to use ClassFinder.
+  Now it is possible to specify a non-qualified class name in
+  configuration files. If a unique package-qualified class is
+  found, it is used to create new instances. Otherwise,
+  smart error messages are printed, when possible.
+
+
+MJ 14/10/2004:
+VERSION 0.1 RELEASED
+------------------------------------------------------------------
+------------------------------------------------------------------
+
+AM 14/10/2004
+- added maxcount and mincount to the toString method of 
+  peersim.util.IncrementalStats
+- added a print(String prefix) method to peersim.util.IncrementalFreq 
+  that uses the Log facility to print
+- protocols are not nullified in GeneralNode when the node is declared DEAD
+- observers, initializers and dynamics are not required to be tagged by
+  consecutive numbers any more; this is not the final version of what
+  we have discussed, it is just a small hack, compatible with the past,
+  that I've implemented in Configuration.java
+- small changes to RangeSimulator; in any case, it will updated in order
+  to be based on the Simulator code.
+
+AM 22/6/2004:
+In GeneralNode, when creating/cloning a node, the CommonState.setNode()
+method is invoked to set the current node being created.
+
+AM 22/6/2004:
+peersim.cdsim.RangeSimulator, added support for idle protocols. When
+a protocol has the idle flag in its specification (like protocol.0.idle),
+the nextCycle method is not called. This can be useful for protocols
+reuse.
+
+AM 22/6/2004:
+peersim.core.Shuffle, example.hot.InetInitializer, example.hot.RobustnessEvaluator,
+example.loadbalance.AvgBalance, example.loadbalance.BasicBalance
+removed unused import(s)
+
+AM 22/6/2004:
+Moved LinearDistribution, UniformDistribution and PeakDistribution to
+a new package called distributions (outside peersim, but to be included
+in the peersim software distribution).
+
+Implemented NodeInitializer in LinearDistribution and UniformDistribution,
+to provide values also when new nodes are added dynamically.
+
+Added classes SingleValueHolder and SingleValueComparator
+
+Name change: peersim.util.ExtendedStats => peersim.util.MomentStats 
+
+Added peersim.cdsim.DaemonProtocol as a generic entry point for all
+kinds of hacks, to avoid complicating the simulator. It can be used
+to run observers and modifiers several times within one cycle.
+
+Added cycle time to peersim.core.CommonState and modified
+peersim.cdsim.Simulator to handle this feature. It records the number
+of nodes already visited in a given cycle (makes sense only for cycle based
+simulation).
+
+Added peersim.example.hot package : classes to model a preferential
+attachment internet like topology
+
+Added peersim.util.ExtendedStats class 
+
+peersim.util.IncrementalFreq now accepts an upper bound on the
+processed values
+
+peersim.cdsim.Simulator now outputs two blank lines between
+experiments
+
+Upgraded GraphPrinter so that it can print to files that can be
+read by WireFromFile. Added method writeNeighborList to GraphIO.
+
+Added new class peersim.dynamics.WireFromFile
+
+Fixed bug in peersim.util.WeightedRandPerm which accepted
+non-positive weights
+
+Added peersim.reports.SingleValueObserver
+
+Added new modifier classes, which can set numeric parameters of
+network nodes according the some specified pattern. Originally this
+was in aggregation but refactored to be more general.
+
+Refactoring: added classes from peersim.init into peersim.dynamics
+and now Dynamics is used also instead of the old Initializer. This
+involved quite a number of files. Note that config files don't break
+because the init entries are now simply loaded as dynamics that are
+scheduled to execute only before the simulation, once. The change
+was trivial in all files, just renaming.
+
+Added class peersim.dynamics.Shuffle
+
+Made class peersim.graph.NeighborListGraph public
+
+fixed bug in GeneralNode with failstate handling
+
+added curent node to CommonState. When a protocol is executing,
+it is the node hosting the protocol. Modified simulators too to
+record this info.
+
+fixed some config files in lpbcast and scamp packages
+
+VERSION 0.0 RELEASED
+------------------------------------------------------------------
+------------------------------------------------------------------
+
+
