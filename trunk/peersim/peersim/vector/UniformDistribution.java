@@ -132,7 +132,8 @@ public void initialize(Node n) {
 	else
 	{
 		double d = max.doubleValue() - min.doubleValue();
-		setter.set(n,CommonState.r.nextDouble()*d);
+		setter.set(n,CommonState.r.nextDouble()*d+
+			min.doubleValue());
 	}
 }
 
