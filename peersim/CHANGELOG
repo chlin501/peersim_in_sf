@@ -1,3 +1,9 @@
+MJ 07/06/16
+- Class peersim.vector.UniformDistribution had a bug: if the class is
+  used as a node initializer, and if the type is double then the
+  generated distribution was incorrect. Many thanks to Gabor Danner
+  who spotted this.
+
 AM 11/06/10
 - Classes VectorObserver, VectCopy and SingleValueObserver of peersim.vector
   have been modified to allow single nodes not to be observed or copied;
