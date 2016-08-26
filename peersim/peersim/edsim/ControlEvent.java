@@ -19,7 +19,7 @@
 package peersim.edsim;
 
 import peersim.core.Control;
-import peersim.core.Scheduler;
+import peersim.core.SchedulerI;
 
 
 /**
@@ -52,14 +52,14 @@ private int order;
 /** 
  * Scheduler object to obtain the next schedule time of this event 
  */
-private Scheduler scheduler;
+private SchedulerI scheduler;
 
 /**
  * Creates a cycle event for a control object. It also schedules the object
  * for the first execution adding it to the priority queue of the event driven
  * simulation.
  */
-public ControlEvent(Control control, Scheduler scheduler, int order)
+public ControlEvent(Control control, SchedulerI scheduler, int order)
 {
 	this.control = control;
 	this.order = order;

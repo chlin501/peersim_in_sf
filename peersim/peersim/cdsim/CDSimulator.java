@@ -213,7 +213,7 @@ public static final void nextExperiment()
 
 	// analysis after the simulation
 	for (int j = 0; j < controls.length; ++j) {
-		if (ctrlSchedules[j].fin)
+		if (ctrlSchedules[j].afterSimulation())
 			controls[j].execute();
 	}
 }

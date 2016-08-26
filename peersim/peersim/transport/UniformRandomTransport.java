@@ -39,13 +39,13 @@ public final class UniformRandomTransport implements Transport
 //---------------------------------------------------------------------
 
 /** 
- * String name of the parameter used to configure the minimum latency.
+ * The minimum latency.
  * @config
  */	
 private static final String PAR_MINDELAY = "mindelay";	
 	
 /** 
- * String name of the parameter used to configure the maximum latency.
+ * The maximum latency.
  * Defaults to {@value #PAR_MINDELAY}, which results in a constant delay.
  * @config 
  */	
