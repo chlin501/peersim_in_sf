@@ -50,7 +50,7 @@ public final class UnreliableTransport implements Transport
 private static final String PAR_TRANSPORT = "transport";
 
 /** 
- * String name of the parameter used to configure the probability that a 
+ * The probability that a 
  * message sent through this transport is lost.
  * @config
  */

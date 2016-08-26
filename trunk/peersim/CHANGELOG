@@ -1,3 +1,25 @@
+MJ 26/08/16
+- Minor refactoring: added a new interface peersim.core.SchedulerI and
+  adapted Scheduler to implement this interface. In addition to this,
+  public field "fin" was made private and now returned through
+  interface method "afterSimulation()". EDSimulator and ControlEvent
+  now uses the new interface while the rest of the code still uses
+  Scheduler directly.
+- EDSimulator now tries to cast each Control it schedules into a
+  SchedulerI object and if it succeeds it uses this SchedulerI
+  for the control. This makes it possible for a control to provide
+  its own sophisticated schedule to, for example, implement a
+  trace-based churn pattern.
+
+MJ 25/08/16
+- peersim.core.IdleProtocol.clone() had an unnecessary shallow
+  initialization assignment that is done by default anyway so it was
+  removed (credit to Gabor Danner).
+- In peersim.trasport.UnreliableTransport and 
+  peersim.trasport.UniformRandomTransport I fixed the docs of the
+  config parameters to be more consistent with the rest of the similar
+  docs (credit to Gabor Danner).
+
 MJ 07/06/16
 - Class peersim.vector.UniformDistribution had a bug: if the class is
   used as a node initializer, and if the type is double then the

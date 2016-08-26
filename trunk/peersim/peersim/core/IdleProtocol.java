@@ -74,7 +74,6 @@ public Object clone()
 	catch( CloneNotSupportedException e ) {} // never happens
 	ip.neighbors = new Node[neighbors.length];
 	System.arraycopy(neighbors, 0, ip.neighbors, 0, len);
-	ip.len = len;
 	return ip;
 }
 

@@ -40,7 +40,7 @@ import peersim.config.*;
 * It refers to the time after the simulation has finished (see
 * {@link CommonState#getPhase}).
 */
-public class Scheduler {
+public class Scheduler implements SchedulerI {
 
 
 // ========================= fields =================================
@@ -88,7 +88,7 @@ public final long from;
 
 public final long until;
 
-public final boolean fin;
+private final boolean fin;
 
 /** The next scheduled time point.*/
 protected long next = -1;
@@ -150,7 +150,6 @@ public Scheduler(String prefix, boolean useDefault)
 // ===================== public methods ==============================
 // ===================================================================
 
-/** true if given time point is covered by this scheduler */
 public boolean active(long time) {
 	
 	if( time < from || time >= until ) return false;
@@ -159,7 +158,6 @@ public boolean active(long time) {
 
 // -------------------------------------------------------------------
 
-/** true if current time point is covered by this scheduler */
 public boolean active() {
 	
 	return active( CommonState.getTime() );
@@ -167,11 +165,6 @@ public boolean active() {
 
 //-------------------------------------------------------------------
 
-/**
-* Returns the next time point. If the returned value is negative, there are
-* no more time points. As a side effect, it also updates the next time point,
-* so repeated calls to this method return the scheduled times.
-*/
 public long getNext()
 {
 	long ret = next;
@@ -179,6 +172,13 @@ public long getNext()
 	if( until-next > step ) next += step;
 	else next = -1;
 	return ret;
+}
+
+//-------------------------------------------------------------------
+
+public boolean afterSimulation()
+{
+	return fin;
 }
 
 }

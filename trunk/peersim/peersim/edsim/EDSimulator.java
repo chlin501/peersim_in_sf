@@ -152,7 +152,7 @@ private static long logtime;
 private static Control[] controls=null;
 
 /** Holds the control schedulers of this simulation */
-private static Scheduler[] ctrlSchedules = null;
+private static SchedulerI[] ctrlSchedules = null;
 
 /** Ordered list of events (heap) */
 private static PriorityQ heap = null;
@@ -192,11 +192,14 @@ private static void scheduleControls()
 	// load controls
 	String[] names = Configuration.getNames(PAR_CTRL);
 	controls = new Control[names.length];
-	ctrlSchedules = new Scheduler[names.length];
+	ctrlSchedules = new SchedulerI[names.length];
 	for(int i=0; i<names.length; ++i)
 	{
 		controls[i]=(Control)Configuration.getInstance(names[i]);
-		ctrlSchedules[i] = new Scheduler(names[i], false);
+		if( controls[i] instanceof SchedulerI )
+			ctrlSchedules[i] = (SchedulerI)controls[i];
+		else
+			ctrlSchedules[i] = new Scheduler(names[i], false);
 	}
 	System.err.println("EDSimulator: loaded controls "+
 		Arrays.asList(names));
@@ -365,7 +368,7 @@ public static void nextExperiment()
 	CommonState.setPhase(CommonState.POST_SIMULATION);
 	for(int j=0; j<controls.length; ++j)
 	{
-		if( ctrlSchedules[j].fin ) controls[j].execute();
+		if( ctrlSchedules[j].afterSimulation() ) controls[j].execute();
 	}
 
 }
