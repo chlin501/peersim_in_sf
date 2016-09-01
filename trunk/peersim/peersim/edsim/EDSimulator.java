@@ -40,8 +40,8 @@ import peersim.core.*;
 * control component.
 * After this, the first event is taken from the event queue. If the event
 * wraps a control, the control is executed, otherwise the event is
-* delivered to the destination protocol, that must implement
-* {@link EDProtocol}. This
+* delivered to the destination protocol if the addressed node is up
+* ({@link Fallible#OK}) that must implement {@link EDProtocol}. This
 * is iterated while the current time is less than {@value #PAR_ENDTIME} or
 * the queue becomes empty.
 * If more control events fall at the same time point, then the order given
@@ -58,6 +58,11 @@ import peersim.core.*;
 * has finished.
 * That is, each experiment is finished by running the controls that are
 * scheduled to be run after the experiment.
+* Alternatively, a control can implement the {@link SchedulerI}
+* interface, in which case the control itself will be used as a
+* scheduler for that control.
+* This allows sophisticated scheduler controls that implement,
+* for example, a trace-based churn pattern.
 * <p>
 * Any control can interrupt an experiment at any time it is
 * executed by returning true in method {@link Control#execute}.
@@ -295,16 +300,18 @@ private static boolean executeNext() {
 		}
 		return ctrl.execute();
 	}
-	else if (ev.node != Network.prototype && ev.node.isUp() )
+	else if (ev.node != Network.prototype && ev.node.getFailState()!=Fallible.DEAD)
 	{
 		CommonState.setPid(pid);
 		CommonState.setNode(ev.node);
-		if( ev.event instanceof NextCycleEvent )
+		if (ev.event instanceof NextCycleEvent)
 		{
+			// this is a scheduling event so we might want to run
+			// it on nodes that are down temporarily (nce will decide)
 			NextCycleEvent nce = (NextCycleEvent) ev.event;
 			nce.execute();
 		}
-		else
+		else if (ev.node.isUp())
 		{
 			EDProtocol prot = null;
 			try {

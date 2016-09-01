@@ -42,7 +42,9 @@ public interface Fallible {
 
 	/**
 	* Fail state indicating that the object is not dead, but is temporarily
-	* not accessible.
+	* not accessible. This could mean the node is switched off, or this
+	* could mean the node has no network access; this state does not
+	* differentiate between these two cases.
 	*/
 	public int DOWN = 2;
 

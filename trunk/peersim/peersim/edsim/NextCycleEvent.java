@@ -20,6 +20,7 @@ package peersim.edsim;
 
 import peersim.core.*;
 import peersim.cdsim.CDProtocol;
+import peersim.config.Configuration;
 
 
 /**
@@ -30,7 +31,13 @@ import peersim.cdsim.CDProtocol;
 * In the configuration of an event driven simulation {@link CDProtocol}s can be
 * configured using {@link CDScheduler}, which places appropriate instances of
 * this events in the queue.
-*
+* <p>
+* {@link EDSimulator} treats instances of this class specially, in that
+* they are processed when the addressed node is not dead
+* ({@link Fallible#DEAD}) whereas normal events are delivered only if the
+* node is {@link Fallible#OK}. This is because we might want to schedule
+* the next cycle even if the node is temporarily down. This behavior
+* can be controlled by the configuration parameters.
 * <p>
 * Note that reimplementing method {@link #nextDelay} of this class allows
 * for arbitrary scheduling,
@@ -41,16 +48,64 @@ import peersim.cdsim.CDProtocol;
 public class NextCycleEvent implements Cloneable {
 
 
+// ========================= fields =================================
+// ==================================================================
+
+
+/**
+* If set then the next cycle is scheduled on nodes that are
+* not dead ({@link Fallible#DEAD}) at the current time.
+* If not set then the next cycle is scheduled only if the node is up
+* ({@link Fallible#OK}).
+* When the node is dead ({@link Fallible#DEAD}) it is not possible
+* to schedule new cycles.
+* @config
+*/
+private static final String PAR_PERSSCH = "persistschedule";
+
+/**
+* If set then the current cycle is executed on nodes that are
+* not dead ({@link Fallible#DEAD}) at the current time.
+* If not set then the current cycle is executed only if the node is up
+* ({@link Fallible#OK}).
+* When the node is dead ({@link Fallible#DEAD}) it is not possible
+* to execute the cycle.
+* @config
+*/
+private static final String PAR_PERSRUN = "persistexec";
+
+protected final boolean perssch;
+
+protected final boolean persrun;
+
+//XXX note that storing these local parameters costs the same as
+// storing a reference to a singleton. Static is not an option
+// because many different configurations can co-exist.
+
 // =============================== initialization ======================
 // =====================================================================
 
+
+/**
+* Default constructor.
+*/
+public NextCycleEvent() {
+	
+	persrun = perssch = false;
+}
+
+// --------------------------------------------------------------------
 
 /**
 * Reads configuration to initialize the object. Extending classes should
 * have a constructor with the same signature, often as simple as
 * <code>super(n)</code>.
 */
-public NextCycleEvent(String n) {}
+public NextCycleEvent(String prefix) {
+
+	perssch = Configuration.contains(prefix+"."+PAR_PERSSCH);
+	persrun = Configuration.contains(prefix+"."+PAR_PERSRUN);
+}
 
 // --------------------------------------------------------------------
 
@@ -75,19 +130,32 @@ public Object clone() throws CloneNotSupportedException {
 * using the delay returned by {@link #nextDelay}.
 * If the next execution time as defined by the delay is outside of the
 * valid times as defined by {@link CDScheduler#sch}, then the next event is not scheduled.
-* Note that this means that this protocol will no longer be scheduled because
-* the next event after the next event is scheduled by the next event.
+* Note that this means that this protocol will no longer be scheduled.
+* <p>
+* The {@link CDProtocol#nextCycle} method will be run only if the node is up, or
+* if parameter {@value #PAR_PERSRUN} is set and the node is not dead.
+* The next cycle will be scheduled only if the node is up, or
+* if parameter {@value #PAR_PERSSCH} is set and the node is not dead.
 */
+
 public final void execute() {
 
-	int pid = CommonState.getPid();
-	Node node = CommonState.getNode();
-	CDProtocol cdp = (CDProtocol)node.getProtocol(pid);
-	cdp.nextCycle(node,pid);
+	final int pid = CommonState.getPid();
+	final Node node = CommonState.getNode();
+	final boolean nodeUp = node.isUp(); // note that dead is not possible here
 	
-	long delay = nextDelay(CDScheduler.sch[pid].step);
-	if( CommonState.getTime()+delay < CDScheduler.sch[pid].until )
-		EDSimulator.add(delay, this, node, pid);
+	if( nodeUp || persrun )
+	{
+		CDProtocol cdp = (CDProtocol)node.getProtocol(pid);
+		cdp.nextCycle(node,pid);
+	}
+
+	if( nodeUp || perssch ) 
+	{
+		long delay = nextDelay(CDScheduler.sch[pid].step);
+		if( CommonState.getTime()+delay < CDScheduler.sch[pid].until )
+			EDSimulator.add(delay, this, node, pid);
+	}
 
 }
 

@@ -128,7 +128,7 @@ public CDScheduler(String n) {
 	
 		nce[i] = (NextCycleEvent)
 			Configuration.getInstance(n+"."+PAR_NEXTC,
-			new NextCycleEvent(null));
+			new NextCycleEvent());
 	}
 
 	randstart = Configuration.contains(n+"."+PAR_RNDSTART);
