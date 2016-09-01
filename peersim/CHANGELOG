@@ -1,3 +1,17 @@
+MJ 01/09/16
+- The behavior of peersim.edsim.NextCycleEvent (and subclasses)
+  was made configurable,
+  in that now it is possible to keep NextCycleEvents alive for nodes that
+  are down (given that these are timing events, not network messages)
+  and it is possible to even deliver the events to CDProtocols on
+  these nodes (ie. call nextCycle), while they are down. The change is
+  backward compatible. See class documentation of NextCycleEvent.
+  Minor changes were needed within EDSimulator to support this.
+
+MJ 30/08/16
+- Updated the documentation of EDSimulator to reflect the
+  new features added on the 26th.
+
 MJ 26/08/16
 - Minor refactoring: added a new interface peersim.core.SchedulerI and
   adapted Scheduler to implement this interface. In addition to this,

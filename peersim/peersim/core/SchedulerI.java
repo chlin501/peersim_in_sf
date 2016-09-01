@@ -62,7 +62,7 @@ public long getNext();
 /** If true then the schedule includes the special time point after
 * the simulation. This special time point is not part of the
 * simulation schedule, there is no numeric value representing it,
-* and it is not returned by {@link getNext}, but it allows
+* and it is not returned by {@link #getNext}, but it allows
 * control components to be run after the simulation has ended.*/
 public boolean afterSimulation();
 
