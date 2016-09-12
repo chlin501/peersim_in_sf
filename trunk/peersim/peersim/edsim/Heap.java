@@ -39,7 +39,7 @@ public class Heap implements PriorityQ {
 /** 
  * This parameter specifies how many
  * bits are used to order events that occur at the same time. Defaults
- * to 8. A value smaller than 8 causes an IllegalParameterException.
+ * to 8. A value smaller than 8 or larger than 30 causes an IllegalParameterException.
  * Higher values allow for a better discrimination, but reduce
  * the maximal time steps that can be simulated.
  * @config 
@@ -123,7 +123,7 @@ public Heap(String prefix) {
 
 	if (pbits < 8 || pbits >= 31) {
 		throw new IllegalParameterException(prefix+"."+PAR_PBITS,
-		"This parameter should be >= 8 or < 31");
+		"This parameter should be between 8 and 30 (inclusive)");
 	}
 	overflowMask = ~maxTime();
 	events = new Object[size];
@@ -136,9 +136,6 @@ public Heap(String prefix) {
 // Methods
 //--------------------------------------------------------------------------
 
-/**
- * Returns the current number of events in the system.
- */
 public int size()
 {
 	return size;
@@ -146,14 +143,6 @@ public int size()
 
 //--------------------------------------------------------------------------
 
-/**
- * Add a new event, to be scheduled at the specified time.
- * 
- * @param time the time at which this event should be scheduled
- * @param event the object describing the event
- * @param node the node at which the event has to be delivered
- * @param pid the protocol that handles the event
- */
 public void add(long time, Object event, Node node, byte pid) 
 {
 	add(time,event,node,pid,CommonState.r.nextInt(1 << pbits));
@@ -161,14 +150,6 @@ public void add(long time, Object event, Node node, byte pid)
 
 //--------------------------------------------------------------------------
 
-/**
- * Add a new event, to be scheduled at the specified time.
- * 
- * @param time the time at which this event should be scheduled
- * @param event the object describing the event
- * @param node the node at which the event has to be delivered
- * @param pid the protocol that handles the event
- */
 public void add(long time, Object event, Node node, byte pid, long priority) 
 {
 	if( (time&overflowMask) != 0 ) throw new

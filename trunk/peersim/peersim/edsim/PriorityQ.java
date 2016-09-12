@@ -60,7 +60,7 @@ public void add(long time, Object event, Node node, byte pid);
  * @param pid the protocol that handles the event
  * @param priority if for two events the "time" value is the same, this
  * value should be used to order them. Lower value means higher priority.
- * Like with time, non-negativity as assumed.
+ * Like with time, non-negativity can be assumed.
  */
 public void add(long time, Object event, Node node, byte pid, long priority);
 
